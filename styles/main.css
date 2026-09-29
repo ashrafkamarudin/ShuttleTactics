@@ -179,6 +179,39 @@ button:disabled {
   background: #245f43;
   box-shadow: inset 0 0 0 1px #86efac;
 }
+.attack-toggle {
+  width: 100%;
+  margin-top: 14px;
+  border: 1px solid #c47b42;
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: #ffe4c4;
+  background: #54351f;
+  font-weight: 750;
+}
+.attack-toggle.selected {
+  color: #241308;
+  background: #ffb56f;
+  border-color: #ffd1a3;
+}
+.attack-toggle:disabled {
+  opacity: 0.48;
+}
+.attack-hint {
+  min-height: 18px;
+  margin: 6px 2px 8px;
+  color: #c7a98d;
+  font-size: 11px;
+}
+.attack-choice {
+  border-color: #c47b42;
+  background: #49311f;
+}
+.attack-choice.selected {
+  border-color: #ffc17e;
+  background: #77502d;
+  box-shadow: inset 0 0 0 1px #ffc17e;
+}
 .leans {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

@@ -1,6 +1,7 @@
 import { clamp } from './math.js';
 import { PRESSURE } from './constants.js';
 import { DROP } from './shuttle.js';
+import { smashPower } from './smash.js';
 function destination(shot, from) {
   // Opponent's left/right is measured in shared world x coordinates.
   const side = from.x >= 0 ? 1 : -1;
@@ -14,6 +15,12 @@ function destination(shot, from) {
 function shotTarget(shot, from, quality = 1) {
   const target = destination(shot, from);
   const q = clamp(quality, 0, 1);
+  if (shot.type === 'smash') {
+    target.power = smashPower(q, from.height ?? 2.2);
+    target.contactHeight = from.height ?? 2.2;
+    target.d = 0.45 + (1 - target.power) * 0.45;
+    return target;
+  }
   if (shot.type === 'clear') {
     // A desperate clear falls short: the opponent can intercept earlier, while
     // the hitter still has to recover from the actual lunge position.

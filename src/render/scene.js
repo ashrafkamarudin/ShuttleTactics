@@ -1,7 +1,9 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
 import { clamp } from '../engine/math.js';
-import { LEANS, SERVES, SHOTS } from '../engine/constants.js';
+import { LEANS, SERVES, SHOTS, SMASH_SHOTS } from '../engine/constants.js';
 import { shotTarget } from '../engine/shots.js';
+import { canSmash } from '../engine/smash.js';
+import { trajectoryHeight } from '../engine/shuttle.js';
 import { serveTarget } from '../engine/rules.js';
 export function createScene(getState) {
   const $ = (id) => document.getElementById(id);
@@ -238,12 +240,18 @@ export function createScene(getState) {
     if (busy || rallyEnded || gameOver) return;
     shuttle.visible = true;
     const p = phase === 'serve' ? player : incoming;
-    shuttle.position.set(p.x, phase === 'serve' ? 1.05 : 0.95, p.d);
+    shuttle.position.set(p.x, phase === 'serve' ? 1.05 : (incoming.height ?? 0.95), p.d);
   }
   function previewShot(id) {
     const { busy, rallyEnded, gameOver, phase, player, incoming } = getState();
     if (busy || rallyEnded || gameOver) return;
-    const shot = (phase === 'serve' ? SERVES : SHOTS).find((s) => s.id === id);
+    const options =
+      phase === 'serve'
+        ? SERVES
+        : canSmash(incoming, incoming.shotType)
+          ? [...SHOTS, ...SMASH_SHOTS]
+          : SHOTS;
+    const shot = options.find((s) => s.id === id);
     if (!shot) return;
     const from = phase === 'serve' ? player : incoming,
       to =
@@ -258,7 +266,9 @@ export function createScene(getState) {
       pts.push(
         new THREE.Vector3(
           from.x + (to.x - from.x) * t,
-          0.95 + peak * 4 * t * (1 - t),
+          shot.type === 'smash'
+            ? trajectoryHeight(shot.type, t, to)
+            : 0.95 + peak * 4 * t * (1 - t),
           from.d + (-to.d - from.d) * t,
         ),
       );

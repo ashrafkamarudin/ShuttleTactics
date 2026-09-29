@@ -1,7 +1,8 @@
 import { clamp } from './math.js';
 import { LEANS } from './constants.js';
 const MOVEMENT_SPEED = 3.65,
-  GAME_TIME_SCALE = 0.48;
+  GAME_TIME_SCALE = 0.82,
+  MIN_SHOT_ANIMATION_MS = 700;
 const REACH = { racket: 0.65, frontLunge: 0.85, sideLunge: 0.25, backLunge: 0.15 };
 const DROP = {
   tightLanding: 0.62,
@@ -13,6 +14,10 @@ const DROP = {
 };
 function flightTime(type, from = { x: 0, d: 3.2 }, landing = { x: 0, d: 4 }) {
   const length = Math.hypot(landing.x - from.x, landing.d + from.d);
+  if (type === 'smash') {
+    const speed = 11 + (landing.power ?? 0.45) * 9;
+    return clamp(length / speed + 0.08, 0.32, 0.8);
+  }
   const speed =
     type === 'clear'
       ? 5.0
@@ -39,6 +44,10 @@ function leanDelay(lean, receiver, landing) {
   return lean === 'neutral' ? 0.22 : clamp(0.22 - 0.16 * alignment, 0.09, 0.39);
 }
 function trajectoryHeight(type, t, target = {}) {
+  if (type === 'smash') {
+    const contactHeight = target.contactHeight ?? 2.2;
+    return contactHeight * (1 - t) + 0.35 * t - 0.24 * 4 * t * (1 - t);
+  }
   const peak =
     target.peak ??
     (type === 'clear' || type === 'serve-deep' ? 5.0 : type === 'serve-mid' ? 2.7 : 1.65);
@@ -59,6 +68,7 @@ function racketReach(receiver, point) {
 export {
   MOVEMENT_SPEED,
   GAME_TIME_SCALE,
+  MIN_SHOT_ANIMATION_MS,
   REACH,
   DROP,
   flightTime,

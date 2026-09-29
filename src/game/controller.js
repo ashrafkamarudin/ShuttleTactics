@@ -4,6 +4,7 @@ import {
   CPU_TUNING,
   recoveryDelay,
   SHOTS,
+  SMASH_SHOTS,
   SERVES,
   ZONES,
   LEANS,
@@ -11,10 +12,12 @@ import {
 import {
   MOVEMENT_SPEED,
   GAME_TIME_SCALE,
+  MIN_SHOT_ANIMATION_MS,
   flightTime,
   trajectoryHeight,
 } from '../engine/shuttle.js';
 import { shotTarget } from '../engine/shots.js';
+import { canSmash } from '../engine/smash.js';
 import { qualityAt } from '../engine/interception.js';
 import { cpuRecoveryForShot, chooseCpuLean } from '../engine/cpu.js';
 import { faultChances, errorRoll } from '../engine/faults.js';
@@ -31,6 +34,7 @@ const $ = (id) => document.getElementById(id);
 let chosenShot = null,
   chosenZone = null,
   chosenLean = 'neutral',
+  attackMode = false,
   cpuLean = 'neutral',
   phase = 'serve',
   busy = false,
@@ -46,6 +50,8 @@ const getState = () => ({
   chosenShot,
   chosenZone,
   chosenLean,
+  attackMode,
+  smashAvailable: canSmash(incoming, incoming.shotType),
   cpuLean,
   phase,
   busy,
@@ -62,6 +68,10 @@ const setSelection = (key, value) => {
   if (key === 'chosenShot') chosenShot = value;
   else if (key === 'chosenZone') chosenZone = value;
   else if (key === 'chosenLean') chosenLean = value;
+  else if (key === 'attackMode') {
+    attackMode = value;
+    chosenShot = null;
+  }
 };
 const { shuttle, marker, syncPeople, showShuttleAtCurrent, previewShot, hidePreview } =
   createScene(getState);
@@ -92,7 +102,7 @@ async function fly(
   const startH = hitter ? { ...hitter } : null,
     startR = receiver ? { ...receiver } : null;
   const reaction = intercept?.reaction ?? 0.23;
-  const duration = endTime * 1000 * GAME_TIME_SCALE;
+  const duration = Math.max(endTime * 1000 * GAME_TIME_SCALE, MIN_SHOT_ANIMATION_MS);
   shuttle.visible = true;
   return new Promise((resolve) => {
     let finished = false,
@@ -108,7 +118,8 @@ async function fly(
     const fallback = setTimeout(finish, duration + 650);
     function frame(now) {
       if (finished) return;
-      const elapsed = clamp((now - started) / (1000 * GAME_TIME_SCALE), 0, endTime),
+      const progress = clamp((now - started) / duration, 0, 1),
+        elapsed = progress * endTime,
         t = clamp(elapsed / total, 0, 1);
       const a = fromYou ? from.d : -from.d,
         b = fromYou ? -to.d : to.d;
@@ -169,21 +180,31 @@ function point(winner, reason) {
 }
 // Evaluate visible position only, with imperfect estimation and some variety.
 // The CPU never reads chosenLean, chosenZone or the player's hidden next stroke.
-function aiChoose(from = cpu, contactQuality = 1) {
+function aiChoose(from = cpu, contactQuality = 1, incomingShotType, interception) {
   const observed = {
     x: clamp(player.x + (Math.random() - 0.5) * CPU_TUNING.positionReadNoise, -2.5, 2.5),
     d: clamp(player.d + (Math.random() - 0.5) * CPU_TUNING.positionReadNoise, 0.2, 6.5),
   };
-  const options = SHOTS.map((shot) => {
-    const target = shotTarget(shot, from, contactQuality);
-    const expected = qualityAt(observed, target, shot.type, 'neutral', from);
-    const fault = faultChances(shot, contactQuality);
-    const risk = fault.net + fault.out;
-    const pressure = (expected.canReach ? 0 : 2.8) + (1 - expected.quality) * 1.7 - risk * 0.085;
-    const desperateDropPenalty =
-      contactQuality < FAULT_TUNING.lateThreshold && shot.type === 'drop' ? 2.5 : 0;
-    return { s: shot, target, pressure: pressure - desperateDropPenalty + Math.random() * 0.35 };
-  }).sort((a, b) => b.pressure - a.pressure);
+  const availableShots = canSmash(interception, incomingShotType)
+    ? [...SHOTS, ...SMASH_SHOTS]
+    : SHOTS;
+  const options = availableShots
+    .map((shot) => {
+      const target = shotTarget(shot, from, contactQuality);
+      const expected = qualityAt(observed, target, shot.type, 'neutral', from);
+      const fault = faultChances(shot, contactQuality);
+      const risk = fault.net + fault.out;
+      const pressure = (expected.canReach ? 0 : 2.8) + (1 - expected.quality) * 1.7 - risk * 0.085;
+      const desperateDropPenalty =
+        contactQuality < FAULT_TUNING.lateThreshold && shot.type === 'drop' ? 2.5 : 0;
+      const attackBonus = shot.type === 'smash' ? 0.8 + target.power * 0.8 : 0;
+      return {
+        s: shot,
+        target,
+        pressure: pressure - desperateDropPenalty + attackBonus + Math.random() * 0.35,
+      };
+    })
+    .sort((a, b) => b.pressure - a.pressure);
   return Math.random() < CPU_TUNING.bestShotChance
     ? options[0]
     : options[Math.floor(Math.random() * Math.min(3, options.length))];
@@ -191,9 +212,9 @@ function aiChoose(from = cpu, contactQuality = 1) {
 function missReason(reach) {
   return `${reach.distance.toFixed(1)}m needed; ${reach.reach.toFixed(1)}m including racket reach in ${reach.elapsed.toFixed(2)}s`;
 }
-async function cpuReturn(context) {
-  const from = context?.point ? { ...context.point } : { ...cpu },
-    ai = aiChoose(from, context?.quality ?? 1);
+async function cpuReturn(context, incomingShotType) {
+  const from = context?.point ? { ...context.point, height: context.height } : { ...cpu },
+    ai = aiChoose(from, context?.quality ?? 1, incomingShotType, context);
   ai.target = shotTarget(ai.s, from, context?.quality ?? 1);
   const fault = errorRoll(ai.s, context?.quality ?? 1);
   if (fault) {
@@ -229,16 +250,27 @@ async function cpuReturn(context) {
   player.x = reach.feet.x;
   player.d = reach.feet.d;
   syncPeople();
-  incoming = { ...reach.point, quality: reach.quality };
+  incoming = {
+    ...reach.point,
+    canReach: true,
+    quality: reach.quality,
+    height: reach.height,
+    stretch: reach.stretch,
+    shotType: ai.s.type,
+  };
   phase = 'rally';
   chosenShot = null;
   chosenZone = null;
   chosenLean = 'neutral';
+  attackMode = false;
   cpuLean = chooseCpuLean();
   busy = false;
   $('turnTitle').textContent = 'Your return';
   $('context').textContent =
     `CPU played ${ai.s.name.toLowerCase()}. You intercepted it ${reach.contact} (${reach.height.toFixed(1)}m high). ${reach.quality < FAULT_TUNING.lateThreshold ? ' A clear is safer than a tight drop, but poor contact also reduces clear depth.' : ''} Choose your stroke, recovery and anticipation.`;
+  if (canSmash(reach, ai.s.type)) {
+    $('context').textContent += ' Comfortable high contact: Attack is available.';
+  }
   status(
     `${reach.contact} contact at ${reach.elapsed.toFixed(2)}s, ${reach.height.toFixed(1)}m high · quality ${Math.round(reach.quality * 100)}%. Net/out risks shown on each shot use this quality. Your next shot starts from your actual position.`,
   );
@@ -282,7 +314,7 @@ async function humanShot(s, z, quality) {
     `CPU anticipated ${cpuLean}; ${reach.contact} contact (${Math.round(reach.quality * 100)}% quality).`,
   );
   await delay(120);
-  await cpuReturn(reach);
+  await cpuReturn(reach, s.type);
 }
 async function playServe() {
   if (!chosenShot || !chosenZone || busy || rallyEnded || gameOver) return;
@@ -302,7 +334,7 @@ async function play() {
   hidePreview();
   renderControls();
   await humanShot(
-    SHOTS.find((v) => v.id === chosenShot),
+    (attackMode ? SMASH_SHOTS : SHOTS).find((v) => v.id === chosenShot),
     ZONES.find((v) => v.id === chosenZone),
     incoming.quality,
   );
@@ -350,6 +382,7 @@ async function nextRally() {
   chosenShot = null;
   chosenZone = null;
   chosenLean = 'neutral';
+  attackMode = false;
   cpuLean = chooseCpuLean();
   hidePreview();
   const sx = serviceX(server);
@@ -404,7 +437,14 @@ async function nextRally() {
   player.x = reach.feet.x;
   player.d = reach.feet.d;
   syncPeople();
-  incoming = { ...reach.point, quality: reach.quality };
+  incoming = {
+    ...reach.point,
+    canReach: true,
+    quality: reach.quality,
+    height: reach.height,
+    stretch: reach.stretch,
+    shotType: aiServe.type,
+  };
   cpuLean = chooseCpuLean();
   busy = false;
   $('turnTitle').textContent = 'Return the serve';

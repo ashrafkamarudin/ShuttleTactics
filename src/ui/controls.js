@@ -1,5 +1,6 @@
-import { SHOTS, SERVES, ZONES, LEANS } from '../engine/constants.js';
+import { SHOTS, SMASH_SHOTS, SERVES, ZONES, LEANS } from '../engine/constants.js';
 import { faultChances } from '../engine/faults.js';
+import { smashPower } from '../engine/smash.js';
 export function createControls(
   getState,
   setSelection,
@@ -19,15 +20,33 @@ export function createControls(
     $('cpuScore').textContent = getState().score[1];
   }
   function renderControls() {
-    const { phase, chosenShot, chosenZone, chosenLean, busy, rallyEnded, gameOver, incoming } =
-      getState();
+    const {
+      phase,
+      chosenShot,
+      chosenZone,
+      chosenLean,
+      attackMode,
+      smashAvailable,
+      busy,
+      rallyEnded,
+      gameOver,
+      incoming,
+    } = getState();
     document.body.classList.toggle('rally-ended', rallyEnded && !gameOver);
     document.body.classList.toggle('match-over', gameOver);
-    const options = phase === 'serve' ? SERVES : SHOTS;
+    const options = phase === 'serve' ? SERVES : attackMode ? SMASH_SHOTS : SHOTS;
+    const attackToggle = $('attack-toggle');
+    attackToggle.disabled = phase === 'serve' || !smashAvailable || busy || rallyEnded || gameOver;
+    attackToggle.classList.toggle('selected', attackMode);
+    attackToggle.setAttribute('aria-pressed', String(attackMode));
+    attackToggle.textContent = attackMode ? 'Back to normal shots' : 'Switch to attack';
+    $('attack-hint').textContent = smashAvailable
+      ? `Attacking opportunity · estimated power ${Math.round(smashPower(incoming.quality, incoming.height) * 100)}%`
+      : 'Unlock with a high, comfortable clear interception';
     $('shots').innerHTML = options
       .map(
         (s) =>
-          `<button class="choice ${chosenShot === s.id ? 'selected' : ''}" data-shot="${s.id}" ${busy || rallyEnded || gameOver ? 'disabled' : ''}><strong>${s.name}</strong><small>${(() => {
+          `<button class="choice ${s.type === 'smash' ? 'attack-choice' : ''} ${chosenShot === s.id ? 'selected' : ''}" data-shot="${s.id}" ${busy || rallyEnded || gameOver ? 'disabled' : ''}><strong>${s.name}</strong><small>${s.type === 'smash' ? `Power ${Math.round(smashPower(incoming.quality, incoming.height) * 100)}% · ` : ''}${(() => {
             const r = faultChances(s, phase === 'serve' ? 1 : incoming.quality);
             return `Net ${r.net.toFixed(1)}% · out ${r.out.toFixed(1)}%`;
           })()}</small></button>`,
@@ -55,6 +74,11 @@ export function createControls(
     setSelection('chosenShot', b.dataset.shot);
     renderControls();
     previewShot(b.dataset.shot);
+  };
+  $('attack-toggle').onclick = () => {
+    if (!getState().smashAvailable || getState().busy) return;
+    setSelection('attackMode', !getState().attackMode);
+    renderControls();
   };
   $('shots').addEventListener('pointerover', (e) => {
     let b = e.target.closest('[data-shot]');
