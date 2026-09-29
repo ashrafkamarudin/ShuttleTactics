@@ -1,5 +1,16 @@
 import { clamp, dist } from './math.js';
 import { MOVEMENT_SPEED, flightTime, leanDelay, trajectoryHeight, racketReach } from './shuttle.js';
+
+/**
+ * Estimate whether a receiver can contact a shuttle and the quality of that contact.
+ *
+ * @param {{x: number, d: number}} receiver Current player position in court coordinates.
+ * @param {{x: number, d: number}} landing Shuttle landing target in court coordinates.
+ * @param {string} shotType Stroke type, used to calculate flight and trajectory.
+ * @param {string} lean Anticipation choice that affects reaction delay.
+ * @param {{x: number, d: number}} from Position from which the shot was hit.
+ * @returns {object} Interception timing, reach, contact point, and quality details.
+ */
 function qualityAt(receiver, landing, shotType, lean = 'neutral', from = { x: 0, d: 3.2 }) {
   const flight = flightTime(shotType, from, landing),
     reaction = leanDelay(lean, receiver, landing);
@@ -9,6 +20,7 @@ function qualityAt(receiver, landing, shotType, lean = 'neutral', from = { x: 0,
   for (let i = 6; i <= 99; i++) {
     const t = i / 100,
       elapsed = flight * t;
+    // The trajectory crosses the net at this fraction of its front-to-back travel.
     const netFraction = from.d / (from.d + landing.d);
     if (t < netFraction + 0.025) continue;
     const progress = (t - netFraction) / (1 - netFraction);

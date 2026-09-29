@@ -1,20 +1,16 @@
 import { clamp, dist } from '../engine/math.js';
 import {
-  FAULT_RATES,
   FAULT_TUNING,
   CPU_TUNING,
-  PRESSURE,
   recoveryDelay,
   SHOTS,
   SERVES,
   ZONES,
   LEANS,
-  C,
 } from '../engine/constants.js';
 import {
   MOVEMENT_SPEED,
   GAME_TIME_SCALE,
-  DROP,
   flightTime,
   trajectoryHeight,
 } from '../engine/shuttle.js';
@@ -45,7 +41,6 @@ let chosenShot = null,
   player = { x: 0, d: 3.2 },
   cpu = { x: 0, d: 3.2 },
   incoming = { x: 0, d: 3.2, quality: 1 },
-  lastHit = null,
   server = 0;
 const getState = () => ({
   chosenShot,
@@ -68,17 +63,8 @@ const setSelection = (key, value) => {
   else if (key === 'chosenZone') chosenZone = value;
   else if (key === 'chosenLean') chosenLean = value;
 };
-const {
-  scene,
-  camera,
-  renderer,
-  shuttle,
-  marker,
-  syncPeople,
-  showShuttleAtCurrent,
-  previewShot,
-  hidePreview,
-} = createScene(getState);
+const { shuttle, marker, syncPeople, showShuttleAtCurrent, previewShot, hidePreview } =
+  createScene(getState);
 const { log, status, setScore, renderControls } = createControls(getState, setSelection, {
   marker,
   syncPeople,
@@ -90,58 +76,7 @@ const serviceX = (who) => serviceXForScore(who, score);
 const serveTarget = (s, who) => serveTargetForScore(s, who, score);
 
 const delay = (ms) => new Promise((r) => setTimeout(r, ms));
-// Clears can be met in midcourt; drops must be met before they fall too low.
-// v0.6: geometry-based flight duration. A longer rear-to-rear diagonal takes longer
-// than the same stroke from midcourt. Gameplay seconds are animated at 0.48x.
-// Gameplay tuning. Racket reach and frontcourt lunges are measured from the player's feet.
-// CPU selects a real recovery zone rather than always drifting to an invisible central point.
-// It does not read the player's next stroke, recovery selection or anticipation.
-// Faults: even comfortable strokes have a small risk. Stretching and late contact
-// increase it sharply; a clear is preferable to a desperate tight drop.
-function moveToward(from, to, limit) {
-  let d = dist(from, to);
-  let t = d ? Math.min(1, limit / d) : 1;
-  from.x += (to.x - from.x) * t;
-  from.d += (to.d - from.d) * t;
-  syncPeople();
-}
-// Animate actual court movement instead of teleporting between positions.
-function animateMove(actor, to, limit, duration = 430) {
-  const start = { x: actor.x, d: actor.d },
-    distance = dist(start, to),
-    fraction = distance ? Math.min(1, limit / distance) : 1;
-  const end = {
-    x: start.x + (to.x - start.x) * fraction,
-    d: start.d + (to.d - start.d) * fraction,
-  };
-  return new Promise((resolve) => {
-    const started = performance.now();
-    let finished = false;
-    const finish = () => {
-      if (finished) return;
-      finished = true;
-      actor.x = end.x;
-      actor.d = end.d;
-      syncPeople();
-      resolve();
-    };
-    const fallback = setTimeout(finish, duration + 350);
-    function step(now) {
-      if (finished) return;
-      const t = clamp((now - started) / duration, 0, 1),
-        ease = t * t * (3 - 2 * t);
-      actor.x = start.x + (end.x - start.x) * ease;
-      actor.d = start.d + (end.d - start.d) * ease;
-      syncPeople();
-      if (t < 1) requestAnimationFrame(step);
-      else {
-        clearTimeout(fallback);
-        finish();
-      }
-    }
-    requestAnimationFrame(step);
-  });
-}
+// Gameplay timing is based on the simulated rally clock, then scaled for animation.
 // One animation clock moves the shuttle, the receiver, and the recovering hitter.
 // Receiver is steered toward the precomputed interception point; hitter can only
 // cover speed × elapsed time, never snap to a selected recovery destination.
@@ -150,14 +85,7 @@ async function fly(
   to,
   type,
   fromYou,
-  {
-    hitter = null,
-    recovery = null,
-    receiver = null,
-    intercept = null,
-    lean = 'neutral',
-    hitterQuality = 1,
-  } = {},
+  { hitter = null, recovery = null, receiver = null, intercept = null, hitterQuality = 1 } = {},
 ) {
   const total = flightTime(type, from, to),
     endTime = intercept?.canReach ? intercept.elapsed : total;
