@@ -1,0 +1,16 @@
+{
+  "name": "shuttle-tactics",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "test": "node --test",
+    "format": "prettier --write \"index.html\" \"styles/**/*.css\" \"src/**/*.js\" \"tests/**/*.js\" \"package.json\"",
+    "format:check": "prettier --check \"index.html\" \"styles/**/*.css\" \"src/**/*.js\" \"tests/**/*.js\" \"package.json\""
+  },
+  "devDependencies": {
+    "prettier": "^3.9.9",
+    "vite": "^7.0.0"
+  }
+}

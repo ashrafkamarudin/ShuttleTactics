@@ -1,336 +1,81 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Shuttle Tactics — Positioning Lab</title>
-<style>
-:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;color:#e9f6f0;background:#081c19}*{box-sizing:border-box}body{margin:0}button{font:inherit;cursor:pointer}button:disabled{cursor:not-allowed;opacity:.42}.app{width:100%;max-width:none;margin:0;padding:14px;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px;align-items:start}.top{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px}.brand{font-size:24px;font-weight:850;letter-spacing:-.7px}.brand span{color:#6ae6aa}.sub{color:#a0bfb3;font-size:13px;margin-top:3px}.pill{border:1px solid #346b59;border-radius:99px;padding:7px 12px;color:#b8f7d7;font-size:12px}.stage{position:relative;background:radial-gradient(circle at 50% 35%,#204d43,#102e29 60%,#091b19);border:1px solid #315448;border-radius:20px;overflow:hidden;height:calc(100dvh - 100px);min-height:620px}#scene{width:100%;height:100%;display:block;touch-action:none}.score{position:absolute;left:16px;top:16px;display:flex;align-items:center;gap:12px;background:#09221ddf;border:1px solid #3b6454;border-radius:13px;padding:12px 17px;pointer-events:none}.score b{font-size:29px}.score small{display:block;font-size:10px;color:#9cbbae;letter-spacing:1px}.score .me{color:#80c4ff}.score .ai{color:#ffb56f}.hint{position:absolute;bottom:14px;left:14px;right:14px;text-align:center;color:#b4d0c5;font-size:12px;pointer-events:none}.panel{background:#102a25;border:1px solid #315448;border-radius:20px;padding:20px;align-self:start}.panel h2{font-size:18px;margin:0 0 8px}.muted{color:#a2bcb0;font-size:13px;line-height:1.55}.section{margin-top:22px}.section-title{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;margin-bottom:11px}.num{display:inline-grid;place-items:center;width:23px;height:23px;border-radius:50%;background:#2e7158;color:#d8ffeb;font-size:12px}.shots{display:grid;grid-template-columns:1fr 1fr;gap:8px}.choice{border:1px solid #3c6255;background:#17382f;color:#e5f6ec;border-radius:11px;padding:13px 8px;text-align:left;min-height:73px}.choice strong{display:block;font-size:13px}.choice small{display:block;color:#9dbdae;font-size:11px;margin-top:5px}.choice.selected{border-color:#86efac;background:#245f43;box-shadow:inset 0 0 0 1px #86efac}.leans{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.lean{border:1px solid #3c6255;background:#17382f;color:#e5f6ec;border-radius:9px;min-height:49px;padding:8px 3px;font-size:12px;cursor:pointer}.lean.selected{background:#245f43;border-color:#86efac;color:#a6ffca}.zones{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.zones .center{grid-column:auto}.zone{text-align:center;padding:13px 4px;min-height:49px;border:1px solid #3c6255;background:#17382f;color:#e5f6ec;border-radius:9px;font-size:12px}.zone.selected{background:#245f43;border-color:#86efac;color:#a6ffca}.play{width:100%;background:#6ce4a1;color:#062419;font-weight:850;border:0;border-radius:11px;padding:14px;margin-top:20px}.secondary{background:#1c4035;border:1px solid #467660;color:#d7f5e4;border-radius:9px;padding:9px 12px}.actions{display:flex;gap:8px;margin-top:10px}.actions button{flex:1}.status{background:#193e32;border:1px solid #35684f;border-radius:11px;padding:12px;font-size:13px;line-height:1.5;margin-top:17px;min-height:65px}.log{font-size:12px;color:#a9c6b7;line-height:1.7;max-height:120px;overflow:auto}.log div{border-bottom:1px solid #274b3e;padding:4px 0}.servebox{background:#17382f;border:1px solid #416c58;border-radius:11px;padding:11px 12px;margin-top:15px;font-size:12px;line-height:1.5}.servebox b{color:#9df1c1}.legend{font-size:11px;color:#9cbcaf;margin-top:11px}.legend b{color:#d6f4df}.hidden{display:none!important}@media(max-width:850px){.app{grid-template-columns:1fr;padding:12px;gap:12px}.top{flex-wrap:wrap}.stage{height:min(75dvh,780px);min-height:420px}#scene{height:100%}.panel{padding:16px}}
-
-/* Touch-first layout: the 3D court remains visible while the tactical controls scroll. */
-.mobile-hint{display:none}
-.log-section summary{cursor:pointer;list-style:none;user-select:none}
-.log-section summary::-webkit-details-marker{display:none}
-.log-chevron{margin-left:auto;transition:transform .2s}
-.log-section[open] .log-chevron{transform:rotate(180deg)}
-@media(max-width:850px){
- html{scroll-padding-top:10px}
- body{padding-bottom:calc(86px + env(safe-area-inset-bottom))}
- .app{display:flex;flex-direction:column;padding:8px;gap:9px}
- .top{width:100%;gap:6px;padding:2px 4px}
- .brand{font-size:20px}.sub{font-size:11px;margin-top:1px}
- .pill{font-size:10px;padding:5px 8px;white-space:nowrap}
- .stage{width:100%;height:clamp(290px,47dvh,520px);min-height:0;border-radius:14px;position:sticky;top:0;z-index:5;box-shadow:0 8px 24px #06161199}
- .score{left:9px;top:9px;padding:6px 10px;gap:8px;border-radius:9px}
- .score b{font-size:22px}.score small{font-size:9px}
- .hint{bottom:6px;font-size:10px;background:#09221dbb;border-radius:6px;padding:4px 6px;left:10px;right:10px}
- .desktop-hint{display:none}.mobile-hint{display:inline}
- .panel{width:100%;padding:12px;border-radius:14px}
- .panel h2{font-size:16px;margin-bottom:4px}
- .muted{font-size:12px;line-height:1.4}
- .servebox{margin-top:8px;padding:8px 10px}
- .section{margin-top:12px}.section-title{margin-bottom:7px;font-size:12px}
- .shots{gap:7px}.choice{min-height:62px;padding:9px 10px;border-radius:10px}
- .choice strong{font-size:13px}.choice small{font-size:10px;margin-top:3px}
- .zones{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
- .zone{min-height:47px;padding:9px 4px;font-size:12px}
- .leans{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
- .lean{min-height:46px;padding:8px 4px;font-size:12px}
- .lean[data-lean="neutral"]{grid-column:1/-1;grid-row:2}
- .lean[data-lean="rear-left"]{grid-row:3;grid-column:1}
- .lean[data-lean="rear-right"]{grid-row:3;grid-column:2}
- .legend{font-size:10px;margin-top:6px}
- .play{position:fixed;z-index:20;bottom:calc(8px + env(safe-area-inset-bottom));left:12px;width:calc(100% - 24px);margin:0;min-height:54px;font-size:16px;box-shadow:0 0 0 4px #081c19,0 8px 28px #0009}
- .status{margin-top:12px;padding:10px;min-height:0;font-size:12px}
- .actions{margin-top:9px}.actions button{min-height:43px}
- body.rally-ended #play{display:none}
- body.rally-ended #next{position:fixed;display:block!important;z-index:21;bottom:calc(8px + env(safe-area-inset-bottom));left:12px;width:calc(100% - 24px);min-height:54px;background:#6ce4a1;color:#062419;font-weight:850;box-shadow:0 0 0 4px #081c19,0 8px 28px #0009}
- body.match-over #next{display:none!important}
- .log-section{border-top:1px solid #315448;padding-top:11px}
- .log{max-height:230px}
- button{touch-action:manipulation}
-}
-@media(max-width:390px){.pill{font-size:9px}.brand{font-size:18px}.stage{height:clamp(260px,43dvh,420px)}}
-@media(min-width:851px){.log-section summary{cursor:pointer}}
-</style>
-</head>
-<body>
-<div class="app">
-<header class="top"><div><div class="brand">🏸 Shuttle<span>Tactics</span></div><div class="sub">Positioning Lab v0.7 · Win through positioning and anticipation</div></div><div class="pill">FIRST TO 11 · WIN BY 2 · CAP 15</div></header>
-<main class="stage"><div id="scene"></div><div class="score"><div><small>YOU</small><b class="me" id="youScore">0</b></div><b style="color:#678b7a">:</b><div><small>CPU</small><b class="ai" id="cpuScore">0</b></div></div><div class="hint"><span class="desktop-hint">Drag to orbit · Scroll to zoom · Hover a shot to preview its path · Choose shot + recovery + anticipation</span><span class="mobile-hint">Drag to rotate · Pinch to zoom</span></div></main>
-<aside class="panel"><h2 id="turnTitle">Your move</h2><div class="muted" id="context">Choose your serve target, recovery and anticipation.</div><div class="servebox" id="serveInfo">Serving: You · Right service court</div><div class="section"><div class="section-title"><span class="num">1</span> CHOOSE A SHOT / SERVE</div><div class="shots" id="shots"></div><div class="legend">Net/out percentages update using your current contact quality. Poor contact raises faults. Edit FAULT_RATES in the code.</div></div><div class="section"><div class="section-title"><span class="num">2</span> RECOVER TO</div><div class="zones" id="zones"></div><div class="legend">Front left / right · Center left / right · Rear left / right. Your recovery is interrupted by an early return.</div></div><div class="section"><div class="section-title"><span class="num">3</span> ANTICIPATE</div><div class="leans" id="leans"></div><div class="legend">Lean toward an expected return for a quicker first step. Wrong guesses slow your reaction.</div></div><button class="play" id="play" disabled>PLAY SHOT →</button><div class="status" id="status" aria-live="polite">Select a serve, recovery and anticipation to begin.</div><div class="actions"><button class="secondary" id="next" style="display:none">Next rally →</button><button class="secondary" id="reset">New match</button></div><details class="section log-section" id="logDetails" open><summary class="section-title">RALLY LOG <span class="log-chevron">⌄</span></summary><div class="log" id="log"><div>Match started. Choose your serve and recovery; service side follows the server’s score.</div></div></details></aside>
-</div>
-<script type="module">
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
-// All dimensions below use metres. Court is 5.18m wide × 13.4m long (singles).
-const $=id=>document.getElementById(id), clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-// Change these percentages to enable faults; 0 means disabled for every shot and serve.
-// Percent chance for a comfortable standard stroke. Raise/lower freely.
-const FAULT_RATES={net:0.45,out:0.65};
-// Poor contact increases risk; drops are especially demanding.
-const FAULT_TUNING={pressureMultiplier:12,lateThreshold:.48,dropRisk:1.65};
-// CPU sees where you stand, not your selected anticipation or recovery target.
-const CPU_TUNING={bestShotChance:.53,positionReadNoise:.42};
-// Pressure tuning: low-quality contact produces shorter clears and a slower first recovery step.
-const PRESSURE={clearMinDepth:2.45,clearFullDepth:5.9,clearMinPeak:2.35,clearFullPeak:5.0,recoveryDelayStart:.65,recoveryDelayMax:.38};
-function recoveryDelay(quality=1){return PRESSURE.recoveryDelayMax*clamp((PRESSURE.recoveryDelayStart-quality)/PRESSURE.recoveryDelayStart,0,1);}
-// Per-shot net/out values below are reference rates at 100% of the configured rates.
-const SHOTS=[{id:'straight-clear',name:'Straight clear',net:3,out:5,type:'clear',cross:false},{id:'cross-clear',name:'Cross clear',net:5,out:8,type:'clear',cross:true},{id:'straight-drop',name:'Straight drop',net:7,out:3,type:'drop',cross:false},{id:'cross-drop',name:'Cross drop',net:10,out:5,type:'drop',cross:true}];
-const SERVES=[{id:"short",name:"Short serve",net:5,out:2,type:"serve-short"},{id:"mid",name:"Mid serve",net:3,out:4,type:"serve-mid"},{id:"deep",name:"Deep serve",net:2,out:7,type:"serve-deep"}];
-const ZONES=[{id:'front-left',name:'Front left',x:-.72,d:2.48},{id:'front-right',name:'Front right',x:.72,d:2.48},{id:'center-left',name:'Center left',x:-.65,d:3.22},{id:'center-right',name:'Center right',x:.65,d:3.22},{id:'rear-left',name:'Rear left',x:-.76,d:3.95},{id:'rear-right',name:'Rear right',x:.76,d:3.95}];
-const LEANS=[{id:'front-left',name:'↖ Front left',x:-1,z:-1},{id:'front-right',name:'↗ Front right',x:1,z:-1},{id:'neutral',name:'◎ Neutral',x:0,z:0},{id:'rear-left',name:'↙ Rear left',x:-1,z:1},{id:'rear-right',name:'↘ Rear right',x:1,z:1}];
-const C={halfWidth:2.59,halfLength:6.7};
-let chosenShot=null,chosenZone=null,chosenLean='neutral',cpuLean='neutral',phase="serve",busy=false,gameOver=false,rallyEnded=false,score=[0,0],rally=1,player={x:0,d:3.2},cpu={x:0,d:3.2},incoming={x:0,d:3.2,quality:1},lastHit=null,server=0;
-const scene=new THREE.Scene();scene.background=new THREE.Color('#102a25');scene.fog=new THREE.Fog('#102a25',17,35);
-const camera=new THREE.PerspectiveCamera(42,1,.1,100);camera.position.set(9,12,13);camera.lookAt(0,0,0);
-const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;$('scene').appendChild(renderer.domElement);
-scene.add(new THREE.HemisphereLight(0xcdf9ed,0x1b3c2d,2));const sun=new THREE.DirectionalLight(0xffffff,2.3);sun.position.set(-4,12,6);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-12;sun.shadow.camera.right=12;sun.shadow.camera.top=12;sun.shadow.camera.bottom=-12;scene.add(sun);
-const mat=(color,roughness=0.85)=>new THREE.MeshStandardMaterial({color,roughness});
-function box(w,h,d,m,x,y,z,shadow=false){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.receiveShadow=true;o.castShadow=shadow;scene.add(o);return o}
-box(20,.18,23,mat('#244b3d'),0,-.19,0);box(6.7,.10,14.9,mat('#b49a75'),0,-.045,0);box(5.18,.025,13.4,mat('#267c59'),0,.018,0);
-const lineMat=new THREE.MeshBasicMaterial({color:0xeafff2});function line(x1,z1,x2,z2,width=.045){let dx=x2-x1,dz=z2-z1;const m=new THREE.Mesh(new THREE.BoxGeometry(width,.012,Math.hypot(dx,dz)),lineMat);m.position.set((x1+x2)/2,.047,(z1+z2)/2);m.rotation.y=Math.atan2(dx,dz);scene.add(m)}
-// Singles sidelines, back boundaries, doubles sidelines (visual only), short service lines and centre service lines.
-for(const x of [-2.59,2.59,-3.05,3.05])line(x,-6.7,x,6.7);for(const z of [-6.7,6.7,-1.98,1.98])line(-3.05,z,3.05,z);line(0,-6.7,0,-1.98);line(0,1.98,0,6.7);line(-3.05,0,3.05,0,.06);
-const netMat=new THREE.MeshBasicMaterial({color:0xe7fff0,transparent:true,opacity:.36,side:THREE.DoubleSide,depthWrite:false});const net=new THREE.Mesh(new THREE.PlaneGeometry(6.1,1.5),netMat);net.position.set(0,.79,0);scene.add(net);for(let x=-3;x<=3.01;x+=.25){let geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x,.05,0),new THREE.Vector3(x,1.54,0)]);scene.add(new THREE.Line(geo,new THREE.LineBasicMaterial({color:0xd7f5e8,transparent:true,opacity:.26})))}for(let y=.05;y<1.55;y+=.19){let geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-3.05,y,0),new THREE.Vector3(3.05,y,0)]);scene.add(new THREE.Line(geo,new THREE.LineBasicMaterial({color:0xd7f5e8,transparent:true,opacity:.27})))}box(.07,1.6,.07,mat('#f3f6e8'),-3.05,.8,0);box(.07,1.6,.07,mat('#f3f6e8'),3.05,.8,0);box(6.16,.045,.045,mat('#fffdf0'),0,1.54,0);
-function makePerson(color){let g=new THREE.Group();const body=new THREE.Mesh(new THREE.CapsuleGeometry(.24,.46,5,10),mat(color));body.position.y=.72;body.castShadow=true;g.add(body);const head=new THREE.Mesh(new THREE.SphereGeometry(.20,14,12),mat('#f2c49e'));head.position.y=1.27;head.castShadow=true;g.add(head);const shadow=new THREE.Mesh(new THREE.CircleGeometry(.37,20),new THREE.MeshBasicMaterial({color:0x071e17,transparent:true,opacity:.28,depthWrite:false}));shadow.rotation.x=-Math.PI/2;shadow.position.y=.07;g.add(shadow);scene.add(g);return g}
-// Each player holds a lightweight racket made entirely from Three.js geometry.
-function addRacket(g,side){const racket=new THREE.Group();const handle=new THREE.Mesh(new THREE.CylinderGeometry(.035,.043,.48,8),mat('#2b3037'));handle.position.y=.12;racket.add(handle);const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.012,.014,.34,8),mat('#cbd5e1'));shaft.position.y=.50;racket.add(shaft);const head=new THREE.Mesh(new THREE.TorusGeometry(.19,.022,8,28),mat('#f9fafb'));head.scale.y=1.35;head.position.y=.82;racket.add(head);const strings=new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(Array.from({length:14},(_,i)=>{let n=i%7-3;return i<7?[new THREE.Vector3(n*.043,.82-Math.sqrt(Math.max(0,.19**2-(n*.043)**2))*1.35,0),new THREE.Vector3(n*.043,.82+Math.sqrt(Math.max(0,.19**2-(n*.043)**2))*1.35,0)]:[new THREE.Vector3(-.19*Math.sqrt(Math.max(0,1-((n*.054)/.255)**2)),.82+n*.054,0),new THREE.Vector3(.19*Math.sqrt(Math.max(0,1-((n*.054)/.255)**2)),.82+n*.054,0)]}).flat()),new THREE.LineBasicMaterial({color:0xd5e7e5,transparent:true,opacity:.7}));racket.add(strings);racket.position.set(side*.35,.66,0);racket.rotation.z=side*-.35;g.add(racket)}
-const youMesh=makePerson('#5aaaff'),cpuMesh=makePerson('#ffac57');addRacket(youMesh,1);addRacket(cpuMesh,-1);function syncPeople(){youMesh.position.set(player.x,0,player.d);cpuMesh.position.set(cpu.x,0,-cpu.d);const l=LEANS.find(v=>v.id===chosenLean)||LEANS[2],c=LEANS.find(v=>v.id===cpuLean)||LEANS[2];youMesh.rotation.z=-l.x*.11;youMesh.rotation.x=l.z*.10;cpuMesh.rotation.z=c.x*.11;cpuMesh.rotation.x=-c.z*.10}syncPeople();
-const shuttle=new THREE.Group();const cork=new THREE.Mesh(new THREE.SphereGeometry(.11,12,10),mat('#fff8db'));shuttle.add(cork);const feather=new THREE.Mesh(new THREE.ConeGeometry(.17,.38,10,1,true),new THREE.MeshBasicMaterial({color:0xf5fff9,side:THREE.DoubleSide}));feather.position.y=.25;shuttle.add(feather);shuttle.visible=false;scene.add(shuttle);
-const marker=new THREE.Mesh(new THREE.RingGeometry(.35,.43,32),new THREE.MeshBasicMaterial({color:'#8effb4',side:THREE.DoubleSide,transparent:true,opacity:.8}));marker.rotation.x=-Math.PI/2;marker.position.y=.065;marker.visible=false;scene.add(marker);
-// Current shuttle and shot-preview arc remain visible while choosing.
-const previewMat=new THREE.LineDashedMaterial({color:0xfde68a,dashSize:.23,gapSize:.13,transparent:true,opacity:.9});
-const preview=new THREE.Line(new THREE.BufferGeometry(),previewMat);preview.visible=false;scene.add(preview);
-const landingRing=new THREE.Mesh(new THREE.RingGeometry(.18,.25,32),new THREE.MeshBasicMaterial({color:0xffe48a,side:THREE.DoubleSide,transparent:true,opacity:.9}));landingRing.rotation.x=-Math.PI/2;landingRing.position.y=.08;landingRing.visible=false;scene.add(landingRing);
-function showShuttleAtCurrent(){if(busy||rallyEnded||gameOver)return;shuttle.visible=true;const p=phase==='serve'?player:incoming;shuttle.position.set(p.x,phase==='serve'?1.05:.95,p.d)}
-function previewShot(id){if(busy||rallyEnded||gameOver)return;const shot=(phase==='serve'?SERVES:SHOTS).find(s=>s.id===id);if(!shot)return;const from=phase==='serve'?player:incoming,to=phase==='serve'?serveTarget(shot,0):shotTarget(shot,from,incoming.quality);const isClear=shot.type==='clear'||shot.id==='deep';const peak=to.peak??(isClear?3.8:shot.id==='mid'?2.2:1.4);let pts=[];for(let i=0;i<=36;i++){let t=i/36;pts.push(new THREE.Vector3(from.x+(to.x-from.x)*t, .95+peak*4*t*(1-t),from.d+(-to.d-from.d)*t))}preview.geometry.dispose();preview.geometry=new THREE.BufferGeometry().setFromPoints(pts);preview.computeLineDistances();preview.visible=true;landingRing.visible=true;landingRing.position.set(to.x,.08,-to.d)}
-function hidePreview(){preview.visible=false;landingRing.visible=false}
-
-const resize=()=>{const el=$('scene');renderer.setSize(el.clientWidth,el.clientHeight);camera.aspect=el.clientWidth/el.clientHeight;camera.fov=window.innerWidth<=850?(camera.aspect<.9?65:57):42;camera.updateProjectionMatrix()};window.addEventListener('resize',resize);new ResizeObserver(resize).observe($('scene'));resize();
-// Orbit without external controls. Keep camera on player's side for easy court reading.
-let orbit={theta:0,phi:1.15,radius:17.2},pointer=null;const activePointers=new Map();let pinchDistance=null;function updateCamera(){camera.position.set(orbit.radius*Math.sin(orbit.phi)*Math.sin(orbit.theta),orbit.radius*Math.cos(orbit.phi),orbit.radius*Math.sin(orbit.phi)*Math.cos(orbit.theta));camera.lookAt(0,0,0)}updateCamera();const canvas=renderer.domElement;canvas.addEventListener('pointerdown',e=>{activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});pointer={x:e.clientX,y:e.clientY,id:e.pointerId};if(activePointers.size>1)pinchDistance=null;canvas.setPointerCapture(e.pointerId)});canvas.addEventListener('pointermove',e=>{if(!activePointers.has(e.pointerId))return;activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});if(activePointers.size===2){const [a,b]=[...activePointers.values()],distance=Math.hypot(a.x-b.x,a.y-b.y);if(pinchDistance)orbit.radius=clamp(orbit.radius*pinchDistance/Math.max(1,distance),11,27);pinchDistance=distance;updateCamera();return}if(!pointer||pointer.id!==e.pointerId)return;orbit.theta=clamp(orbit.theta-(e.clientX-pointer.x)*.006,-1.4,1.4);orbit.phi=clamp(orbit.phi+(e.clientY-pointer.y)*.006,.3,1.28);pointer.x=e.clientX;pointer.y=e.clientY;updateCamera()});const releasePointer=e=>{activePointers.delete(e.pointerId);pinchDistance=null;const remaining=[...activePointers.entries()][0];pointer=remaining?{id:remaining[0],...remaining[1]}:null};canvas.addEventListener('pointerup',releasePointer);canvas.addEventListener('pointercancel',releasePointer);canvas.addEventListener('wheel',e=>{e.preventDefault();orbit.radius=clamp(orbit.radius+Math.sign(e.deltaY)*1.3,11,27);updateCamera()},{passive:false});
-function animate(){requestAnimationFrame(animate);renderer.render(scene,camera)}animate();
-const delay=ms=>new Promise(r=>setTimeout(r,ms));const dist=(a,b)=>Math.hypot(a.x-b.x,a.d-b.d);
-function log(msg){let d=document.createElement('div');d.textContent=msg;$('log').prepend(d)}function status(s){$('status').textContent=s}function setScore(){ $('youScore').textContent=score[0];$('cpuScore').textContent=score[1] }
-function renderControls(){document.body.classList.toggle('rally-ended',rallyEnded&&!gameOver);document.body.classList.toggle('match-over',gameOver);const options=phase==='serve'?SERVES:SHOTS;$('shots').innerHTML=options.map(s=>`<button class="choice ${chosenShot===s.id?'selected':''}" data-shot="${s.id}" ${busy||rallyEnded||gameOver?'disabled':''}><strong>${s.name}</strong><small>${(()=>{const r=faultChances(s,phase==='serve'?1:incoming.quality);return `Net ${r.net.toFixed(1)}% · out ${r.out.toFixed(1)}%`})()}</small></button>`).join('');$('zones').innerHTML=ZONES.map(z=>`<button class="zone ${chosenZone===z.id?'selected':''}" data-zone="${z.id}" ${busy||rallyEnded||gameOver?'disabled':''}>${z.name}</button>`).join('');$('leans').innerHTML=LEANS.map(l=>`<button class="lean ${chosenLean===l.id?'selected':''}" data-lean="${l.id}" ${busy||rallyEnded||gameOver?'disabled':''}>${l.name}</button>`).join('');$('play').disabled=!chosenShot||!chosenZone||busy||rallyEnded||gameOver;$('play').textContent=busy?'PLAYING…':phase==='serve'?'SERVE →':'PLAY SHOT →';let z=ZONES.find(z=>z.id===chosenZone);marker.visible=!!z&&!busy&&!rallyEnded;if(z)marker.position.set(z.x,.065,z.d);syncPeople();if(!busy&&!rallyEnded)showShuttleAtCurrent()}
-$('shots').onclick=e=>{const b=e.target.closest('[data-shot]');if(!b||busy)return;chosenShot=b.dataset.shot;renderControls();previewShot(chosenShot)};$('shots').addEventListener('pointerover',e=>{let b=e.target.closest('[data-shot]');if(b)previewShot(b.dataset.shot)});$('shots').addEventListener('pointerout',e=>{if(e.relatedTarget?.closest?.('[data-shot]'))return;if(chosenShot)previewShot(chosenShot);else hidePreview()});$('zones').onclick=e=>{const b=e.target.closest('[data-zone]');if(!b||busy)return;chosenZone=b.dataset.zone;renderControls()};$('leans').onclick=e=>{const b=e.target.closest('[data-lean]');if(!b||busy)return;chosenLean=b.dataset.lean;renderControls()};
-function serveTarget(s,who){const side=serviceX(who);return {x:-Math.sign(side)*.92,d:s.id==='short'?2.25:s.id==='mid'?3.85:5.95}}
-function destination(shot,from){ // Opponent's left/right is measured in shared world x coordinates.
-const side=from.x>=0?1:-1;return {x:clamp((shot.cross?-side:side)*1.85,-2.25,2.25),d:shot.type==='clear'?5.9:1.15};}
-// Comfortable contact allows a tighter drop. A stretched/late return tends to float
-// higher and deeper. No random quality roll: interception determines the trajectory.
-function shotTarget(shot,from,quality=1){
- const target=destination(shot,from);
- const q=clamp(quality,0,1);
- if(shot.type==='clear'){
-  // A desperate clear falls short: the opponent can intercept earlier, while
-  // the hitter still has to recover from the actual lunge position.
-  const power=clamp((q-.18)/.67,0,1);
-  target.d=PRESSURE.clearMinDepth+(PRESSURE.clearFullDepth-PRESSURE.clearMinDepth)*power;
-  target.peak=PRESSURE.clearMinPeak+(PRESSURE.clearFullPeak-PRESSURE.clearMinPeak)*power;
-  target.strength=power>=.97?'full':power>=.55?'reduced':'weak';
-  return target;
- }
- if(shot.type!=='drop')return target;
- target.d=q>=.76?DROP.tightLanding:q>=.48?DROP.normalLanding:DROP.looseLanding;
- target.tightness=q>=.76?'tight':q>=.48?'normal':'loose';
- target.peak=q>=.76?DROP.tightPeak:q>=.48?DROP.normalPeak:DROP.loosePeak;
- return target;
-}
-// Sample playable interception points along the incoming shuttle's path.
-// Clears can be met in midcourt; drops must be met before they fall too low.
-// v0.6: geometry-based flight duration. A longer rear-to-rear diagonal takes longer
-// than the same stroke from midcourt. Gameplay seconds are animated at 0.48x.
-// Gameplay tuning. Racket reach and frontcourt lunges are measured from the player's feet.
-const MOVEMENT_SPEED=3.65, GAME_TIME_SCALE=.48;
-const REACH={racket:.65,frontLunge:.85,sideLunge:.25,backLunge:.15};
-const DROP={tightLanding:.62,normalLanding:1.15,looseLanding:1.75,tightPeak:1.30,normalPeak:1.65,loosePeak:2.05};
-function flightTime(type,from={x:0,d:3.2},landing={x:0,d:4}){
- const length=Math.hypot(landing.x-from.x,landing.d+from.d);
- const speed=type==='clear'?5.0:type==='serve-deep'?5.3:type==='serve-mid'?5.7:type==='serve-short'?5.4:7.5;
- return clamp(length/speed+((type==='clear')?.28:type==='serve-deep'?.18:.12),(type==='clear')?1.3:.55,(type==='clear')?3.15:2.2);
-}
-function leanDelay(lean,receiver,landing){
- const l=LEANS.find(v=>v.id===lean)||LEANS[2];
- // Relative to the receiver's actual position, not just the nominal target corner.
- const dx=landing.x-receiver.x,dz=landing.d-receiver.d;
- const magnitude=Math.hypot(dx,dz)||1;
- const alignment=(l.x*dx+l.z*dz)/(Math.SQRT2*magnitude);
- return lean==='neutral'?.22:clamp(.22-.16*alignment,.09,.39);
-}
-function trajectoryHeight(type,t,target={}){
- const peak=target.peak??(type==='clear'||type==='serve-deep'?5.0:type==='serve-mid'?2.7:1.65);
- return .75*(1-t)+.35*t+peak*4*t*(1-t);
-}
-// Frontcourt lunges reach ahead of the feet; side and rear reaches are smaller.
-// A racket can contact the shuttle without the player's feet reaching its XY point.
-function racketReach(receiver,point){
- const dx=Math.abs(point.x-receiver.x),dz=point.d-receiver.d;
- return REACH.racket+(dz<-.2?REACH.frontLunge:dz>.2?REACH.backLunge:0)+(dx>.45?REACH.sideLunge:0);
-}
-function qualityAt(receiver,landing,shotType,lean='neutral',from={x:0,d:3.2}){
- const flight=flightTime(shotType,from,landing),reaction=leanDelay(lean,receiver,landing);
- const clear=shotType==='clear'||shotType==='serve-deep';
- const samples=[];let closest=null;
- for(let i=6;i<=99;i++){
-  const t=i/100,elapsed=flight*t;
-  const netFraction=from.d/(from.d+landing.d);
-  if(t<netFraction+.025)continue;
-  const progress=(t-netFraction)/(1-netFraction);
-  const point={x:from.x+(landing.x-from.x)*t,d:Math.max(.12,landing.d*progress)};
-  const height=trajectoryHeight(shotType,t,landing);
-  if(height<.32||height>3.05)continue;
-  if(clear&&point.d<1.75)continue;
-  const distance=dist(receiver,point),footwork=Math.max(0,elapsed-reaction)*MOVEMENT_SPEED;
-  const extension=racketReach(receiver,point);
-  const reach=footwork+extension;
-  const candidate={point,distance,reach,footwork,extension,height,t,elapsed,margin:reach-distance};
-  if(!closest||candidate.margin>closest.margin)closest=candidate;
-  if(distance<=reach)samples.push(candidate);
- }
- if(!samples.length){const v=closest||{point:landing,distance:dist(receiver,landing),reach:0,elapsed:flight,height:0};return {...v,canReach:false,quality:.15,flight,reaction,contact:'miss'};}
- // The first comfortable interception beats waiting until the shuttle falls too low.
- const best=samples.find(v=>v.margin>.42)||samples[Math.min(3,samples.length-1)];
- const feetFraction=best.distance?Math.min(1,best.footwork/best.distance):1;
- best.feet={x:receiver.x+(best.point.x-receiver.x)*feetFraction,d:receiver.d+(best.point.d-receiver.d)*feetFraction};
- const stretch=clamp((best.distance-best.footwork)/Math.max(.01,best.extension),0,1);
- const timing=clamp((flight-best.elapsed)/flight,0,1);
- const quality=clamp(.86+.18*timing-.46*stretch-(best.height<.65?.13:0),.18,1);
- const contact=quality>=.76?'comfortable':quality>=.48?'stretched':'late';
- return {...best,canReach:true,quality,contact,stretch,flight,reaction};
-}
-// CPU selects a real recovery zone rather than always drifting to an invisible central point.
-// It does not read the player's next stroke, recovery selection or anticipation.
-function cpuRecoveryForShot(shot,from){
- const side=from.x>=0?'right':'left';
- const candidates=shot.type==='drop'
-   ? [`front-${side}`,`center-${side}`,`center-${side==='right'?'left':'right'}`]
-   : [`center-${side}`,`rear-${side}`,`center-${side==='right'?'left':'right'}`];
- // More distant recovery is possible, but actual movement is limited by interception time.
- const ranked=candidates.map((id,i)=>{const z=ZONES.find(z=>z.id===id);return {z,score:(i===0?1:i===1?.75:.65)-dist(from,z)*.12+Math.random()*.42}}).sort((a,b)=>b.score-a.score);
- return ranked[0].z;
-}
-function chooseCpuLean(){const pool=['neutral','neutral','front-left','front-right','rear-left','rear-right'];return pool[Math.floor(Math.random()*pool.length)]}
-// Faults: even comfortable strokes have a small risk. Stretching and late contact
-// increase it sharply; a clear is preferable to a desperate tight drop.
-function faultChances(shot,quality=1){
- const q=clamp(quality,0,1),stress=Math.pow(1-q,1.65)*FAULT_TUNING.pressureMultiplier; // Previous interception quality directly sets next-shot risk.
- const typeFactor=shot.type==='drop'?FAULT_TUNING.dropRisk:1;
- const netFactor=shot.type==='drop'?(shot.cross?1.65:1.3):shot.type==='clear'?.65:1;
- const outFactor=shot.type==='clear'?1.25:shot.type==='drop'?.7:1;
- return {net:clamp(FAULT_RATES.net*netFactor*(1+stress*typeFactor),0,60),
-         out:clamp(FAULT_RATES.out*outFactor*(1+stress*typeFactor),0,60)};
-}
-function errorRoll(shot,quality=1){
- const {net,out}=faultChances(shot,quality),roll=Math.random()*100;
- return roll<net?'net':roll<net+out?'out':null;
-}
-function moveToward(from,to,limit){let d=dist(from,to);let t=d?Math.min(1,limit/d):1;from.x+=(to.x-from.x)*t;from.d+=(to.d-from.d)*t;syncPeople()}
-// Animate actual court movement instead of teleporting between positions.
-function animateMove(actor,to,limit,duration=430){
- const start={x:actor.x,d:actor.d},distance=dist(start,to),fraction=distance?Math.min(1,limit/distance):1;
- const end={x:start.x+(to.x-start.x)*fraction,d:start.d+(to.d-start.d)*fraction};
- return new Promise(resolve=>{const started=performance.now();let finished=false;const finish=()=>{if(finished)return;finished=true;actor.x=end.x;actor.d=end.d;syncPeople();resolve()};const fallback=setTimeout(finish,duration+350);function step(now){if(finished)return;const t=clamp((now-started)/duration,0,1),ease=t*t*(3-2*t);actor.x=start.x+(end.x-start.x)*ease;actor.d=start.d+(end.d-start.d)*ease;syncPeople();if(t<1)requestAnimationFrame(step);else{clearTimeout(fallback);finish()}}requestAnimationFrame(step)});
-}
-// One animation clock moves the shuttle, the receiver, and the recovering hitter.
-// Receiver is steered toward the precomputed interception point; hitter can only
-// cover speed × elapsed time, never snap to a selected recovery destination.
-async function fly(from,to,type,fromYou,{hitter=null,recovery=null,receiver=null,intercept=null,lean='neutral',hitterQuality=1}={}){
- const total=flightTime(type,from,to),endTime=intercept?.canReach?intercept.elapsed:total;
- const startH=hitter?{...hitter}:null,startR=receiver?{...receiver}:null;
- const reaction=intercept?.reaction??.23;
- const duration=endTime*1000*GAME_TIME_SCALE;
- shuttle.visible=true;
- return new Promise(resolve=>{
-  let finished=false,started=performance.now();
-  const finish=()=>{if(finished)return;finished=true;clearTimeout(fallback);shuttle.visible=false;syncPeople();resolve()};
-  const fallback=setTimeout(finish,duration+650);
-  function frame(now){if(finished)return;
-   const elapsed=clamp((now-started)/(1000*GAME_TIME_SCALE),0,endTime),t=clamp(elapsed/total,0,1);
-   const a=fromYou?from.d:-from.d,b=fromYou?-to.d:to.d;
-   shuttle.position.set(from.x+(to.x-from.x)*t,trajectoryHeight(type,t,to),a+(b-a)*t);
-   shuttle.rotation.z=t*2;
-   if(hitter&&recovery){const distance=dist(startH,recovery),amount=Math.min(distance,Math.max(0,elapsed-.12-recoveryDelay(hitterQuality))*MOVEMENT_SPEED);const ratio=distance?amount/distance:1;hitter.x=startH.x+(recovery.x-startH.x)*ratio;hitter.d=startH.d+(recovery.d-startH.d)*ratio;}
-   if(receiver&&intercept?.canReach){const feet=intercept.feet||intercept.point;const distance=dist(startR,feet),amount=Math.min(distance,Math.max(0,elapsed-reaction)*MOVEMENT_SPEED);const ratio=distance?amount/distance:1;receiver.x=startR.x+(feet.x-startR.x)*ratio;receiver.d=startR.d+(feet.d-startR.d)*ratio;}
-   syncPeople();if(elapsed<endTime)requestAnimationFrame(frame);else finish();
-  }
-  requestAnimationFrame(frame);
- });
-}
-function point(winner,reason){hidePreview();shuttle.visible=false;server=winner;score[winner]++;setScore();rallyEnded=true;busy=false;let name=winner===0?'You':'CPU';status(`${name} win${winner===0?'':'s'} the rally! ${reason}`);log(`${name} +1 — ${reason}`);$('turnTitle').textContent=winner===0?'Point to you!':'Point to CPU';const win=score[winner]>=11&&(score[winner]-score[1-winner]>=2||score[winner]===15);if(win){gameOver=true;$('turnTitle').textContent=winner===0?'🏆 You win the match!':'CPU wins the match';status(`Final score: ${score[0]}–${score[1]}. Hit New match to play again.`)}else{$('next').style.display='block';$('next').textContent='Next rally →'}renderControls()}
-// Evaluate visible position only, with imperfect estimation and some variety.
-// The CPU never reads chosenLean, chosenZone or the player's hidden next stroke.
-function aiChoose(from=cpu,contactQuality=1){
- const observed={x:clamp(player.x+(Math.random()-.5)*CPU_TUNING.positionReadNoise,-2.5,2.5),
-                 d:clamp(player.d+(Math.random()-.5)*CPU_TUNING.positionReadNoise,.2,6.5)};
- const options=SHOTS.map(shot=>{
-  const target=shotTarget(shot,from,contactQuality);
-  const expected=qualityAt(observed,target,shot.type,'neutral',from);
-  const fault=faultChances(shot,contactQuality);
-  const risk=fault.net+fault.out;
-  const pressure=(expected.canReach?0:2.8)+(1-expected.quality)*1.7-risk*.085;
-   const desperateDropPenalty=contactQuality<FAULT_TUNING.lateThreshold&&shot.type==='drop'?2.5:0;
-  return {s:shot,target,pressure:pressure-desperateDropPenalty+Math.random()*.35};
- }).sort((a,b)=>b.pressure-a.pressure);
- return Math.random()<CPU_TUNING.bestShotChance?options[0]:options[Math.floor(Math.random()*Math.min(3,options.length))];
-}
-function missReason(reach){return `${reach.distance.toFixed(1)}m needed; ${reach.reach.toFixed(1)}m including racket reach in ${reach.elapsed.toFixed(2)}s`}
-async function cpuReturn(context){
- const from=context?.point?{...context.point}:{...cpu},ai=aiChoose(from,context?.quality??1);
- ai.target=shotTarget(ai.s,from,context?.quality??1);
- const fault=errorRoll(ai.s,context?.quality??1);
- if(fault){point(0,`CPU hits ${fault==='net'?'the net':'out'} on a ${ai.s.name.toLowerCase()}.`);return;}
- const recovery=cpuRecoveryForShot(ai.s,cpu);
- if(recoveryDelay(context?.quality??1)>.01)log(`CPU needs ${recoveryDelay(context.quality).toFixed(2)}s to regain balance after ${Math.round(context.quality*100)}% contact.`);
- log(`CPU recovery target: ${recovery.name} from (${cpu.x.toFixed(1)}, ${cpu.d.toFixed(1)}).`);
- const reach=qualityAt(player,ai.target,ai.s.type,chosenLean,from);
- status(`CPU plays ${ai.s.name.toLowerCase()}…`);log(`CPU: ${ai.s.name}${ai.target.tightness?' ('+ai.target.tightness+')':ai.target.strength?' ('+ai.target.strength+')':''} · ${flightTime(ai.s.type,from,ai.target).toFixed(2)}s flight · your ${chosenLean} anticipation`);
- await fly(from,ai.target,ai.s.type,false,{hitter:cpu,recovery,receiver:player,intercept:reach,hitterQuality:context?.quality??1});
- log(`CPU recovery reached (${cpu.x.toFixed(1)}, ${cpu.d.toFixed(1)})${dist(cpu,recovery)<.08?' — target reached':' — still moving toward '+recovery.name}; your interception at ${reach.elapsed.toFixed(2)}s.`);
- if(!reach.canReach){point(1,`CPU's ${ai.s.name.toLowerCase()} beats your positioning (${missReason(reach)}).`);return;}
- // The shuttle is held at the racket while the human chooses the next turn.
- player.x=reach.feet.x;player.d=reach.feet.d;syncPeople();
- incoming={...reach.point,quality:reach.quality};phase='rally';chosenShot=null;chosenZone=null;chosenLean='neutral';cpuLean=chooseCpuLean();busy=false;
- $('turnTitle').textContent='Your return';$('context').textContent=`CPU played ${ai.s.name.toLowerCase()}. You intercepted it ${reach.contact} (${reach.height.toFixed(1)}m high). ${reach.quality<FAULT_TUNING.lateThreshold?' A clear is safer than a tight drop, but poor contact also reduces clear depth.':''} Choose your stroke, recovery and anticipation.`;
- status(`${reach.contact} contact at ${reach.elapsed.toFixed(2)}s, ${reach.height.toFixed(1)}m high · quality ${Math.round(reach.quality*100)}%. Net/out risks shown on each shot use this quality. Your next shot starts from your actual position.`);renderControls();
-}
-async function humanShot(s,z,quality){
- const from=s.type.startsWith('serve')?{...player}:{...incoming},target=s.type.startsWith('serve')?serveTarget(s,0):shotTarget(s,from,quality);
- const fault=errorRoll(s,quality);
- if(fault){point(1,`Your ${s.name.toLowerCase()} goes ${fault==='net'?'into the net':'out'}.`);return;}
- const reach=qualityAt(cpu,target,s.type,cpuLean,from);
- if(recoveryDelay(quality)>.01)log(`Your ${Math.round(quality*100)}% contact costs ${recoveryDelay(quality).toFixed(2)}s of recovery balance.`);
- status(`You play ${s.name.toLowerCase()}…`);log(`You: ${s.name}${target.tightness?' ('+target.tightness+')':target.strength?' ('+target.strength+')':''} → ${z.name} · ${chosenLean} lean · ${flightTime(s.type,from,target).toFixed(2)}s flight`);
- await fly(from,target,s.type,true,{hitter:player,recovery:z,receiver:cpu,intercept:reach,hitterQuality:quality});
- if(!reach.canReach){point(0,`Your ${s.name.toLowerCase()} beats the CPU (${missReason(reach)}).`);return;}
- cpu.x=reach.feet.x;cpu.d=reach.feet.d;syncPeople();
- log(`CPU ${reach.contact} interception at ${reach.elapsed.toFixed(2)}s (${reach.height.toFixed(1)}m high); your recovery stopped at (${player.x.toFixed(1)}, ${player.d.toFixed(1)}).`);
- log(`CPU anticipated ${cpuLean}; ${reach.contact} contact (${Math.round(reach.quality*100)}% quality).`);await delay(120);await cpuReturn(reach);
-}
-async function playServe(){if(!chosenShot||!chosenZone||busy||rallyEnded||gameOver)return;busy=true;hidePreview();renderControls();await humanShot(SERVES.find(v=>v.id===chosenShot),ZONES.find(v=>v.id===chosenZone),1)}
-async function play(){if(phase==='serve')return playServe();if(!chosenShot||!chosenZone||busy||rallyEnded||gameOver)return;busy=true;hidePreview();renderControls();await humanShot(SHOTS.find(v=>v.id===chosenShot),ZONES.find(v=>v.id===chosenZone),incoming.quality)}
-// Never leave the interface locked if an animation or turn throws.
-let turnWatchdog=null;
-function recoverFromTurnError(err){console.error('Turn failed:',err);clearTimeout(turnWatchdog);turnWatchdog=null;busy=false;hidePreview();shuttle.visible=false;status('Turn interrupted: '+(err?.message||String(err))+'. You can retry, or start a new match.');renderControls()}
-function runTurn(fn){if(busy)return;clearTimeout(turnWatchdog);turnWatchdog=setTimeout(()=>recoverFromTurnError(new Error('Animation timed out')),10000);Promise.resolve().then(fn).catch(recoverFromTurnError).finally(()=>{clearTimeout(turnWatchdog);turnWatchdog=null})}
-$('play').onclick=()=>runTurn(play);
-// Service follows singles rules: even server score = right box, odd = left.
-// World x: player faces -z (right = +x); CPU faces +z (right = -x).
-function serviceX(who){const right=score[who]%2===0;return (who===0?1:-1)*(right?1:-1)*1.22}
-function setServiceInfo(){const side=score[server]%2===0?'Right':'Left';$('serveInfo').innerHTML=`<b>${server===0?'YOUR SERVE':'CPU SERVE'}</b> · ${side} service court · ${score[server]} points<br><span style="color:#a2bcb0">Choose short, mid or deep when serving; CPU serves automatically.</span>`}
-async function nextRally(){if(gameOver)return;rally++;rallyEnded=false;busy=true;phase=server===0?'serve':'rally';chosenShot=null;chosenZone=null;chosenLean='neutral';cpuLean=chooseCpuLean();hidePreview();const sx=serviceX(server);player={x:server===0?sx:-sx,d:server===0?4.05:3.15};cpu={x:server===1?sx:-sx,d:server===1?4.05:3.15};incoming={x:player.x,d:3.25,quality:1};syncPeople();$('next').style.display='none';$('turnTitle').textContent=server===0?'Your serve':'CPU serving…';$('context').textContent=`Rally ${rally}: ${server===0?'Choose your serve and recovery':'CPU serves'} from the ${score[server]%2===0?'right':'left'} service court.`;setServiceInfo();status(server===0?'Pick a serve target and where to recover.':'CPU is choosing a serve…');log(`— Rally ${rally}: ${server===0?'You':'CPU'} serving (${score[server]%2===0?'right':'left'}) —`);renderControls();if(server===0){busy=false;renderControls();return}
-const aiServe=SERVES[Math.floor(Math.random()*SERVES.length)],target=serveTarget(aiServe,1),from={...cpu},serveRecovery=ZONES.find(z=>z.id==='center-'+(cpu.x>=0?'right':'left'));
-const serveFault=errorRoll(aiServe,1);if(serveFault){point(0,`CPU's ${aiServe.name.toLowerCase()} goes ${serveFault==='net'?'into the net':'out'}.`);return;}
-status(`CPU plays a ${aiServe.name.toLowerCase()}…`);log(`CPU: ${aiServe.name} → ${serveRecovery.name} recovery`);
-const reach=qualityAt(player,target,aiServe.type,'neutral',from);
-await fly(from,target,aiServe.type,false,{hitter:cpu,recovery:serveRecovery,receiver:player,intercept:reach});
- log(`CPU serve recovery reached (${cpu.x.toFixed(1)}, ${cpu.d.toFixed(1)})${dist(cpu,serveRecovery)<.08?' — target reached':' — still moving toward '+serveRecovery.name}.`);
-if(gameOver)return;
-if(!reach.canReach){point(1,`CPU's serve beats your receiving position (${missReason(reach)}).`);return;}
-player.x=reach.feet.x;player.d=reach.feet.d;syncPeople();incoming={...reach.point,quality:reach.quality};cpuLean=chooseCpuLean();busy=false;
-$('turnTitle').textContent='Return the serve';$('context').textContent=`CPU played a ${aiServe.name.toLowerCase()}. Choose your return, recovery and anticipation.`;status('You intercepted the serve. Choose your return.');renderControls()}
-// Hide the diagnostic log by default on phones; keep it expanded on laptops.
-if(window.matchMedia('(max-width:850px)').matches)$('logDetails').open=false;
-$('next').onclick=()=>runTurn(nextRally);$('reset').onclick=()=>{clearTimeout(turnWatchdog);turnWatchdog=null;score=[0,0];rally=0;server=0;gameOver=false;rallyEnded=false;busy=false;setScore();$('log').innerHTML='';runTurn(nextRally)};runTurn(nextRally);
-</script>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Shuttle Tactics — Positioning Lab</title>
+    <link rel="stylesheet" href="./styles/main.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="top">
+        <div>
+          <div class="brand">🏸 Shuttle<span>Tactics</span></div>
+          <div class="sub">Positioning Lab v0.7 · Win through positioning and anticipation</div>
+        </div>
+        <div class="pill">FIRST TO 11 · WIN BY 2 · CAP 15</div>
+      </header>
+      <main class="stage">
+        <div id="scene"></div>
+        <div class="score">
+          <div><small>YOU</small><b class="me" id="youScore">0</b></div>
+          <b style="color: #678b7a">:</b>
+          <div><small>CPU</small><b class="ai" id="cpuScore">0</b></div>
+        </div>
+        <div class="hint">
+          <span class="desktop-hint"
+            >Drag to orbit · Scroll to zoom · Hover a shot to preview its path · Choose shot +
+            recovery + anticipation</span
+          ><span class="mobile-hint">Drag to rotate · Pinch to zoom</span>
+        </div>
+      </main>
+      <aside class="panel">
+        <h2 id="turnTitle">Your move</h2>
+        <div class="muted" id="context">Choose your serve target, recovery and anticipation.</div>
+        <div class="servebox" id="serveInfo">Serving: You · Right service court</div>
+        <div class="section">
+          <div class="section-title"><span class="num">1</span> CHOOSE A SHOT / SERVE</div>
+          <div class="shots" id="shots"></div>
+          <div class="legend">
+            Net/out percentages update using your current contact quality. Poor contact raises
+            faults. Edit FAULT_RATES in the code.
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title"><span class="num">2</span> RECOVER TO</div>
+          <div class="zones" id="zones"></div>
+          <div class="legend">
+            Front left / right · Center left / right · Rear left / right. Your recovery is
+            interrupted by an early return.
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title"><span class="num">3</span> ANTICIPATE</div>
+          <div class="leans" id="leans"></div>
+          <div class="legend">
+            Lean toward an expected return for a quicker first step. Wrong guesses slow your
+            reaction.
+          </div>
+        </div>
+        <button class="play" id="play" disabled>PLAY SHOT →</button>
+        <div class="status" id="status" aria-live="polite">
+          Select a serve, recovery and anticipation to begin.
+        </div>
+        <div class="actions">
+          <button class="secondary" id="next" style="display: none">Next rally →</button
+          ><button class="secondary" id="reset">New match</button>
+        </div>
+        <details class="section log-section" id="logDetails" open>
+          <summary class="section-title">RALLY LOG <span class="log-chevron">⌄</span></summary>
+          <div class="log" id="log">
+            <div>
+              Match started. Choose your serve and recovery; service side follows the server’s
+              score.
+            </div>
+          </div>
+        </details>
+      </aside>
+    </div>
+    <script type="module" src="./src/game/controller.js"></script>
+  </body>
 </html>
