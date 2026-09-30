@@ -23,6 +23,11 @@ import { qualityAt } from '../engine/interception.js';
 import { cpuRecoveryForShot, chooseCpuLean } from '../engine/cpu.js';
 import { faultChances, errorRoll } from '../engine/faults.js';
 import {
+  resolveInterception,
+  resolveRallyContact,
+  resolveShotAttempt,
+} from './rally-resolution.js';
+import {
   serviceX as serviceXForScore,
   serveTarget as serveTargetForScore,
 } from '../engine/rules.js';
@@ -217,8 +222,13 @@ function missReason(reach) {
 async function cpuReturn(context, incomingShotType) {
   const from = context?.point ? { ...context.point, height: context.height } : { ...cpu },
     ai = aiChoose(from, context?.quality ?? 1, incomingShotType, context);
-  ai.target = shotTarget(ai.s, from, context?.quality ?? 1);
-  const fault = errorRoll(ai.s, context?.quality ?? 1);
+  const attempt = resolveShotAttempt({
+    shot: ai.s,
+    from,
+    quality: context?.quality ?? 1,
+  });
+  ai.target = attempt.target;
+  const fault = attempt.fault;
   if (fault) {
     point(0, `CPU hits ${fault === 'net' ? 'the net' : 'out'} on a ${ai.s.name.toLowerCase()}.`);
     return;
@@ -229,7 +239,13 @@ async function cpuReturn(context, incomingShotType) {
       `CPU needs ${recoveryDelay(context.quality).toFixed(2)}s to regain balance after ${Math.round(context.quality * 100)}% contact.`,
     );
   log(`CPU recovery target: ${recovery.name} from (${cpu.x.toFixed(1)}, ${cpu.d.toFixed(1)}).`);
-  const reach = qualityAt(player, ai.target, ai.s.type, chosenLean, from);
+  const reach = resolveInterception({
+    receiver: player,
+    target: ai.target,
+    shotType: ai.s.type,
+    lean: chosenLean,
+    from,
+  });
   status(`CPU plays ${ai.s.name.toLowerCase()}…`);
   log(
     `CPU: ${ai.s.name}${ai.target.tightness ? ' (' + ai.target.tightness + ')' : ai.target.strength ? ' (' + ai.target.strength + ')' : ''} · ${flightTime(ai.s.type, from, ai.target).toFixed(2)}s flight · your ${chosenLean} anticipation`,
@@ -244,8 +260,12 @@ async function cpuReturn(context, incomingShotType) {
   log(
     `CPU recovery reached (${cpu.x.toFixed(1)}, ${cpu.d.toFixed(1)})${dist(cpu, recovery) < 0.08 ? ' — target reached' : ' — still moving toward ' + recovery.name}; your interception at ${reach.elapsed.toFixed(2)}s.`,
   );
-  if (!reach.canReach) {
-    point(1, `CPU's ${ai.s.name.toLowerCase()} beats your positioning (${missReason(reach)}).`);
+  const contact = resolveRallyContact('cpu', reach);
+  if (!contact.continues) {
+    point(
+      contact.pointWinner === 'cpu' ? 1 : 0,
+      `CPU's ${ai.s.name.toLowerCase()} beats your positioning (${missReason(reach)}).`,
+    );
     return;
   }
   // The shuttle is held at the racket while the human chooses the next turn.
@@ -279,14 +299,25 @@ async function cpuReturn(context, incomingShotType) {
   renderControls();
 }
 async function humanShot(s, z, quality) {
-  const from = s.type.startsWith('serve') ? { ...player } : { ...incoming },
-    target = s.type.startsWith('serve') ? serveTarget(s, 0) : shotTarget(s, from, quality);
-  const fault = errorRoll(s, quality);
+  const from = s.type.startsWith('serve') ? { ...player } : { ...incoming };
+  const attempt = resolveShotAttempt({
+    shot: s,
+    from,
+    quality,
+    target: s.type.startsWith('serve') ? serveTarget(s, 0) : undefined,
+  });
+  const { target, fault } = attempt;
   if (fault) {
     point(1, `Your ${s.name.toLowerCase()} goes ${fault === 'net' ? 'into the net' : 'out'}.`);
     return;
   }
-  const reach = qualityAt(cpu, target, s.type, cpuLean, from);
+  const reach = resolveInterception({
+    receiver: cpu,
+    target,
+    shotType: s.type,
+    lean: cpuLean,
+    from,
+  });
   if (recoveryDelay(quality) > 0.01)
     log(
       `Your ${Math.round(quality * 100)}% contact costs ${recoveryDelay(quality).toFixed(2)}s of recovery balance.`,
@@ -302,8 +333,12 @@ async function humanShot(s, z, quality) {
     intercept: reach,
     hitterQuality: quality,
   });
-  if (!reach.canReach) {
-    point(0, `Your ${s.name.toLowerCase()} beats the CPU (${missReason(reach)}).`);
+  const contact = resolveRallyContact('player', reach);
+  if (!contact.continues) {
+    point(
+      contact.pointWinner === 'player' ? 0 : 1,
+      `Your ${s.name.toLowerCase()} beats the CPU (${missReason(reach)}).`,
+    );
     return;
   }
   cpu.x = reach.feet.x;
