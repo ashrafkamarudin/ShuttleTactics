@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Shuttle Tactics — Positioning Lab</title>
+    <script type="module" crossorigin src="/assets/index-B-22keyI.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DA8jYCHK.css">
+  </head>
+  <body>
+    <div class="app">
+      <header class="top">
+        <div>
+          <div class="brand">🏸 Shuttle<span>Tactics</span></div>
+          <div class="sub">Positioning Lab v1.1 · Win through positioning and anticipation</div>
+        </div>
+        <div class="pill">FIRST TO 11 · WIN BY 2 · CAP 15</div>
+      </header>
+      <main class="stage">
+        <div id="scene"></div>
+        <div class="score">
+          <div><small>YOU</small><b class="me" id="youScore">0</b></div>
+          <b style="color: #678b7a">:</b>
+          <div><small>CPU</small><b class="ai" id="cpuScore">0</b></div>
+        </div>
+        <div class="hint">
+          <span class="desktop-hint"
+            >Drag to orbit · Scroll to zoom · Hover a shot to preview its path · Choose shot +
+            recovery + anticipation</span
+          ><span class="mobile-hint">Drag to rotate · Pinch to zoom</span>
+        </div>
+      </main>
+      <aside class="panel">
+        <h2 id="turnTitle">Your move</h2>
+        <div class="muted" id="context">Choose your serve target, recovery and anticipation.</div>
+        <div class="servebox" id="serveInfo">Serving: You · Right service court</div>
+        <div class="section">
+          <div class="section-title"><span class="num">1</span> CHOOSE A SHOT / SERVE</div>
+          <button class="attack-toggle" id="attack-toggle" type="button" disabled>
+            Switch to attack
+          </button>
+          <div class="attack-hint" id="attack-hint">
+            Unlock with a high, comfortable clear interception
+          </div>
+          <div class="shots" id="shots"></div>
+          <div class="legend">
+            Net/out percentages update using your current contact quality. Poor contact raises
+            faults. Edit FAULT_RATES in the code.
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title"><span class="num">2</span> RECOVER TO</div>
+          <div class="zones" id="zones"></div>
+          <div class="legend">
+            Front left / right · Center left / right · Rear left / right. Your recovery is
+            interrupted by an early return.
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title"><span class="num">3</span> ANTICIPATE</div>
+          <div class="leans" id="leans"></div>
+          <div class="legend">
+            Lean toward an expected return for a quicker first step. Wrong guesses slow your
+            reaction.
+          </div>
+        </div>
+        <button class="play" id="play" disabled>PLAY SHOT →</button>
+        <div class="status" id="status" aria-live="polite">
+          Select a serve, recovery and anticipation to begin.
+        </div>
+        <div class="actions">
+          <button class="secondary" id="next" style="display: none">Next rally →</button
+          ><button class="secondary" id="reset">New match</button>
+        </div>
+        <details class="section log-section" id="logDetails" open>
+          <summary class="section-title">RALLY LOG <span class="log-chevron">⌄</span></summary>
+          <div class="log" id="log">
+            <div>
+              Match started. Choose your serve and recovery; service side follows the server’s
+              score.
+            </div>
+          </div>
+        </details>
+      </aside>
+    </div>
+  </body>
+</html>
