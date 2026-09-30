@@ -14,6 +14,7 @@ import {
   GAME_TIME_SCALE,
   MIN_SHOT_ANIMATION_MS,
   flightTime,
+  trajectoryProgress,
   trajectoryHeight,
 } from '../engine/shuttle.js';
 import { shotTarget } from '../engine/shots.js';
@@ -120,13 +121,14 @@ async function fly(
       if (finished) return;
       const progress = clamp((now - started) / duration, 0, 1),
         elapsed = progress * endTime,
-        t = clamp(elapsed / total, 0, 1);
+        t = clamp(elapsed / total, 0, 1),
+        pathProgress = trajectoryProgress(type, t);
       const a = fromYou ? from.d : -from.d,
         b = fromYou ? -to.d : to.d;
       shuttle.position.set(
-        from.x + (to.x - from.x) * t,
+        from.x + (to.x - from.x) * pathProgress,
         trajectoryHeight(type, t, to),
-        a + (b - a) * t,
+        a + (b - a) * pathProgress,
       );
       shuttle.rotation.z = t * 2;
       if (hitter && recovery) {

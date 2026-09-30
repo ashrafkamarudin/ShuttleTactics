@@ -3,7 +3,7 @@ import { clamp } from '../engine/math.js';
 import { LEANS, SERVES, SHOTS, SMASH_SHOTS } from '../engine/constants.js';
 import { shotTarget } from '../engine/shots.js';
 import { canSmash } from '../engine/smash.js';
-import { trajectoryHeight } from '../engine/shuttle.js';
+import { trajectoryHeight, trajectoryProgress } from '../engine/shuttle.js';
 import { serveTarget } from '../engine/rules.js';
 export function createScene(getState) {
   const $ = (id) => document.getElementById(id);
@@ -262,14 +262,15 @@ export function createScene(getState) {
     const peak = to.peak ?? (isClear ? 3.8 : shot.id === 'mid' ? 2.2 : 1.4);
     let pts = [];
     for (let i = 0; i <= 36; i++) {
-      let t = i / 36;
+      let t = i / 36,
+        progress = trajectoryProgress(shot.type, t);
       pts.push(
         new THREE.Vector3(
-          from.x + (to.x - from.x) * t,
-          shot.type === 'smash'
+          from.x + (to.x - from.x) * progress,
+          shot.type === 'clear' || shot.type === 'smash'
             ? trajectoryHeight(shot.type, t, to)
             : 0.95 + peak * 4 * t * (1 - t),
-          from.d + (-to.d - from.d) * t,
+          from.d + (-to.d - from.d) * progress,
         ),
       );
     }

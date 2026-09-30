@@ -4,6 +4,7 @@ const MOVEMENT_SPEED = 3.65,
   GAME_TIME_SCALE = 0.82,
   MIN_SHOT_ANIMATION_MS = 700;
 const REACH = { racket: 0.65, frontLunge: 0.85, sideLunge: 0.25, backLunge: 0.15 };
+const CLEAR_PROGRESS_EXPONENT = 1.4;
 const DROP = {
   tightLanding: 0.62,
   normalLanding: 1.15,
@@ -34,6 +35,12 @@ function flightTime(type, from = { x: 0, d: 3.2 }, landing = { x: 0, d: 4 }) {
     type === 'clear' ? 3.15 : 2.2,
   );
 }
+function trajectoryProgress(type, t) {
+  return type === 'clear' ? 1 - (1 - t) ** CLEAR_PROGRESS_EXPONENT : t;
+}
+function trajectoryTimeAtProgress(type, progress) {
+  return type === 'clear' ? 1 - (1 - progress) ** (1 / CLEAR_PROGRESS_EXPONENT) : progress;
+}
 function leanDelay(lean, receiver, landing) {
   const l = LEANS.find((v) => v.id === lean) || LEANS[2];
   // Relative to the receiver's actual position, not just the nominal target corner.
@@ -51,6 +58,19 @@ function trajectoryHeight(type, t, target = {}) {
   const peak =
     target.peak ??
     (type === 'clear' || type === 'serve-deep' ? 5.0 : type === 'serve-mid' ? 2.7 : 1.65);
+  if (type === 'clear') {
+    const apex = peak + 0.55;
+    if (t <= 0.3) {
+      const u = t / 0.3;
+      return 0.75 + (apex - 0.75) * (1 - (1 - u) ** 2);
+    }
+    if (t <= 0.7) {
+      const u = (t - 0.3) / 0.4;
+      return apex - 0.15 * (3 * u ** 2 - 2 * u ** 3);
+    }
+    const u = (t - 0.7) / 0.3;
+    return apex - 0.15 + (0.35 - (apex - 0.15)) * u ** 2;
+  }
   return 0.75 * (1 - t) + 0.35 * t + peak * 4 * t * (1 - t);
 }
 // Frontcourt lunges reach ahead of the feet; side and rear reaches are smaller.
@@ -72,6 +92,8 @@ export {
   REACH,
   DROP,
   flightTime,
+  trajectoryProgress,
+  trajectoryTimeAtProgress,
   leanDelay,
   trajectoryHeight,
   racketReach,

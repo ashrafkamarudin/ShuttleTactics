@@ -44,12 +44,12 @@ const SMASH_SHOTS = [
   { id: 'cross-smash', name: 'Cross smash', net: 13, out: 8, type: 'smash', cross: true },
 ];
 const ZONES = [
-  { id: 'front-left', name: 'Front left', x: -0.72, d: 2.48 },
-  { id: 'front-right', name: 'Front right', x: 0.72, d: 2.48 },
-  { id: 'center-left', name: 'Center left', x: -0.65, d: 3.22 },
-  { id: 'center-right', name: 'Center right', x: 0.65, d: 3.22 },
-  { id: 'rear-left', name: 'Rear left', x: -0.76, d: 3.95 },
-  { id: 'rear-right', name: 'Rear right', x: 0.76, d: 3.95 },
+  { id: 'front-left', name: 'Front left', x: -1.3, d: 1.6 },
+  { id: 'front-right', name: 'Front right', x: 1.3, d: 1.6 },
+  { id: 'center-left', name: 'Center left', x: -0.35, d: 3.2 },
+  { id: 'center-right', name: 'Center right', x: 0.35, d: 3.2 },
+  { id: 'rear-left', name: 'Rear left', x: -1.3, d: 4.8 },
+  { id: 'rear-right', name: 'Rear right', x: 1.3, d: 4.8 },
 ];
 const LEANS = [
   { id: 'front-left', name: '↖ Front left', x: -1, z: -1 },

@@ -4,6 +4,8 @@
 **Scope:** Current working tree, including the uncommitted v1.1 smash implementation.  
 **Existing checks:** `npm test` passes 8/8 tests. The existing tests do not cover the movement, recovery, or CPU scenarios in this report.
 
+**Follow-up:** The recovery destinations have since been updated. See [Recovery Zone Calibration](./recovery-zone-calibration.md) for the new coordinates and after-change deterministic results. The findings below describe the pre-calibration coordinates.
+
 ## Executive summary
 
 The evidence does not support globally increasing player speed or globally slowing shuttles. It does identify two concrete modeling concerns:

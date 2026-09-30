@@ -1,5 +1,14 @@
 import { clamp, dist } from './math.js';
-import { MOVEMENT_SPEED, flightTime, leanDelay, trajectoryHeight, racketReach } from './shuttle.js';
+import {
+  MOVEMENT_SPEED,
+  flightTime,
+  leanDelay,
+  trajectoryHeight,
+  trajectoryProgress,
+  trajectoryTimeAtProgress,
+  racketReach,
+} from './shuttle.js';
+import { clearContactModifier } from './clear-contact.js';
 
 /**
  * Estimate whether a receiver can contact a shuttle and the quality of that contact.
@@ -21,10 +30,21 @@ function qualityAt(receiver, landing, shotType, lean = 'neutral', from = { x: 0,
     const t = i / 100,
       elapsed = flight * t;
     // The trajectory crosses the net at this fraction of its front-to-back travel.
-    const netFraction = from.d / (from.d + landing.d);
-    if (t < netFraction + 0.025) continue;
-    const progress = (t - netFraction) / (1 - netFraction);
-    const point = { x: from.x + (landing.x - from.x) * t, d: Math.max(0.12, landing.d * progress) };
+    let point;
+    if (shotType === 'clear') {
+      const netFraction = from.d / (from.d + landing.d);
+      const netCrossingTime = trajectoryTimeAtProgress(shotType, netFraction);
+      if (t < netCrossingTime + 0.025) continue;
+      const progress = trajectoryProgress(shotType, t);
+      const depth = -from.d + (from.d + landing.d) * progress;
+      if (depth < 0.12) continue;
+      point = { x: from.x + (landing.x - from.x) * progress, d: depth };
+    } else {
+      const netFraction = from.d / (from.d + landing.d);
+      if (t < netFraction + 0.025) continue;
+      const progress = (t - netFraction) / (1 - netFraction);
+      point = { x: from.x + (landing.x - from.x) * t, d: Math.max(0.12, landing.d * progress) };
+    }
     const height = trajectoryHeight(shotType, t, landing);
     if (height < 0.32 || height > 3.05) continue;
     if (clear && point.d < 1.75) continue;
@@ -70,8 +90,24 @@ function qualityAt(receiver, landing, shotType, lean = 'neutral', from = { x: 0,
     0.18,
     1,
   );
-  const contact = quality >= 0.76 ? 'comfortable' : quality >= 0.48 ? 'stretched' : 'late';
-  return { ...best, canReach: true, quality, contact, stretch, flight, reaction };
+  const positioning =
+    shotType === 'clear'
+      ? clearContactModifier(receiver, best.point, landing, best.footwork)
+      : null;
+  const adjustedQuality = clamp(quality - (positioning?.totalLoss ?? 0), 0.18, 1);
+  const contact =
+    adjustedQuality >= 0.76 ? 'comfortable' : adjustedQuality >= 0.48 ? 'stretched' : 'late';
+  return {
+    ...best,
+    canReach: true,
+    quality: adjustedQuality,
+    baseQuality: quality,
+    positioning,
+    contact,
+    stretch,
+    flight,
+    reaction,
+  };
 }
 
 export { qualityAt };
